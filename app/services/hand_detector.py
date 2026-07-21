@@ -32,22 +32,10 @@ class HandDetector:
     ):
         """
         Initialize the MediaPipe Hands model and drawing utilities.
-
-        Args:
-            static_image_mode (bool): If False, treats input images as a
-                video stream (enables tracking between frames for better
-                performance). Set True for independent, unrelated images.
-            max_num_hands (int): Maximum number of hands to detect.
-            min_detection_confidence (float): Minimum confidence value
-                ([0.0, 1.0]) for hand detection to be considered successful.
-            min_tracking_confidence (float): Minimum confidence value
-                ([0.0, 1.0]) for the hand landmarks to be considered
-                tracked successfully.
         """
-        # MediaPipe Hands solution module
+
         self.mp_hands = mp.solutions.hands
 
-        # Create the Hands detector instance with the given configuration
         self.hands = self.mp_hands.Hands(
             static_image_mode=static_image_mode,
             max_num_hands=max_num_hands,
@@ -55,41 +43,31 @@ class HandDetector:
             min_tracking_confidence=min_tracking_confidence,
         )
 
-        # MediaPipe drawing utilities (used to draw landmarks/connections)
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
     def detect_hands(self, frame):
         """
-        Detect hands in the given frame, draw landmarks on any detected
-        hands, and return the processed frame.
-
-        Args:
-            frame: An OpenCV frame (BGR numpy array) to process.
-
-        Returns:
-            The processed OpenCV frame (BGR numpy array) with hand
-            landmarks and connections drawn on it, if any hands were
-            detected. If no hands are detected, the original frame is
-            returned unmodified.
+        Detect hands in the given frame, draw landmarks,
+        and return both the processed frame and landmarks.
         """
-        # MediaPipe expects RGB images, but OpenCV frames are in BGR,
-        # so we convert the color space before processing.
+
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # Run hand detection/tracking on the RGB frame
         results = self.hands.process(rgb_frame)
 
-        # If one or more hands were detected, draw their landmarks
+        detected_landmarks = None
+
         if results.multi_hand_landmarks:
+            detected_landmarks = results.multi_hand_landmarks[0]
+
             for hand_landmarks in results.multi_hand_landmarks:
                 self.mp_drawing.draw_landmarks(
-                    frame,  # Draw directly on the original BGR frame
+                    frame,
                     hand_landmarks,
                     self.mp_hands.HAND_CONNECTIONS,
                     self.mp_drawing_styles.get_default_hand_landmarks_style(),
                     self.mp_drawing_styles.get_default_hand_connections_style(),
                 )
 
-        # Return the processed frame (with or without drawn landmarks)
-        return frame, results
+        return frame, detected_landmarks

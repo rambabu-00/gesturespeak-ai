@@ -11,9 +11,9 @@ This file intentionally contains ONLY webcam capture/display logic.
 It does NOT contain any Flask routes/app code and does NOT contain
 any HTML.
 """
-
 import cv2
 
+from app.services.gesture_classifier import GestureClassifier
 from app.services.hand_detector import HandDetector
 
 
@@ -24,6 +24,7 @@ def main():
     """
     # Create an instance of the hand detector
     detector = HandDetector()
+    classifier = GestureClassifier()
 
     # Open the default webcam (index 0)
     cap = cv2.VideoCapture(0)
@@ -47,8 +48,17 @@ def main():
 
             # Send the frame to the detector for hand detection and
             # landmark drawing
-            processed_frame, results = detector.detect_hands(frame)
-
+            processed_frame, landmarks = detector.detect_hands(frame)
+            gesture = classifier.classify(landmarks)
+            cv2.putText(
+                processed_frame,
+                gesture,
+                (20, 40),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 0),
+                2,
+                )
             # Display the processed frame in a window
             cv2.imshow("GestureSpeak AI - Hand Detection", processed_frame)
 
